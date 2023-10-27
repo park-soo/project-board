@@ -63,9 +63,14 @@ public class ArticleService {
     public void updateArticle(Long articleId, ArticleDto dto) {
         try {
             Article article = articleRepository.getReferenceById(articleId);
+            UserAccount userAccount = userAccountRepository.getReferenceById(dto.userAccountDto().userId());
+
+            if (article.getUserAccount().equals(userAccount)) {
+
             if (dto.title() != null) { article.setTitle(dto.title()); }
             if (dto.content() != null) { article.setContent(dto.content()); }
             article.setHashtag(dto.hashtag());
+            }
 
             //articleRepository.save(article);  // save는 필요없다. updateArticle은 class level Transactional에 의해서
             // 이 메소드 단위로 Transaction이 묶여있습니다. 그래서 Transaction이 끝날때
@@ -73,13 +78,13 @@ public class ArticleService {
             // 업데이트쿼리가 실행이 되는것이다. 그래서 따로 save를 명시할 필요가 없다.(코드 레벨에 따라서 save를 명시해줘도 된다.)
         } catch (EntityNotFoundException e) {
             //log.warn("게시글 업데이트 실패. 게시글을 찾을 수 없습니다. - dto: {}" + dto);
-            log.warn("게시글 업데이트 실패. 게시글을 찾을 수 없습니다. - dto: {}",dto); // String을 concatenation해서 사용하는 것보다  interpolation을 사용해라
+            log.warn("게시글 업데이트 실패. 게시글을 수정하는데 필요한 정보를 찾을 수 없습니다. - dto: {}",e.getLocalizedMessage()); // String을 concatenation해서 사용하는 것보다  interpolation을 사용해라
                                                                             // 이렇게 하면 warning 로그를 찍지 않아도 될 때 dto안에 있는 로직을 실행하거나 메모리를 잡아야 되는 부분에 부담을 덜 수 있다.
         }
     }
 
-    public void deleteArticle(long articleId) {
-        articleRepository.deleteById(articleId);
+    public void deleteArticle(long articleId, String userId) {
+        articleRepository.deleteByIdAndUserAccount_UserId(articleId, userId);
     }
 
     public long getArticleCount() {
